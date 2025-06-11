@@ -7,15 +7,15 @@ const mongoSanitize = require('express-mongo-sanitize');
 const helmetConfig = {
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://api.stripe.com'],
-      fontSrc: ["'self'", 'https:', 'data:'],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'self'", 'https://js.stripe.com']
+      defaultSrc: ['\'self\''],
+      scriptSrc: ['\'self\'', '\'unsafe-inline\'', '\'unsafe-eval\''],
+      styleSrc: ['\'self\'', '\'unsafe-inline\''],
+      imgSrc: ['\'self\'', 'data:', 'https:'],
+      connectSrc: ['\'self\'', 'https://api.stripe.com'],
+      fontSrc: ['\'self\'', 'https:', 'data:'],
+      objectSrc: ['\'none\''],
+      mediaSrc: ['\'self\''],
+      frameSrc: ['\'self\'', 'https://js.stripe.com']
     }
   },
   crossOriginEmbedderPolicy: true,

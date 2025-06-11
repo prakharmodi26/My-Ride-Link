@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { Ride, Payment } = require('../models');
+const { Ride, Payment, User, Driver } = require('../models');
 const { logger } = require('../config/logger');
 
 // Create a payment intent for a ride

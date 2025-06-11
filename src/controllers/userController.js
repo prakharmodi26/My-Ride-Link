@@ -3,7 +3,7 @@ const { NotFoundError, ValidationError } = require('../middleware/errorHandler')
 const { logger } = require('../config/logger');
 
 // Get user profile
-exports.getProfile = async (req, res, next) => {
+async function getProfile(req, res, next) {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
@@ -20,10 +20,10 @@ exports.getProfile = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 // Update user profile
-exports.updateProfile = async (req, res, next) => {
+async function updateProfile(req, res, next) {
   try {
     const user = await User.findByPk(req.user.id);
 
@@ -49,10 +49,10 @@ exports.updateProfile = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 // Change password
-exports.changePassword = async (req, res, next) => {
+async function changePassword(req, res, next) {
   try {
     const { currentPassword, newPassword } = req.body;
     const user = await User.findByPk(req.user.id);
@@ -75,10 +75,10 @@ exports.changePassword = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 // Get user's vehicles
-exports.getVehicles = async (req, res, next) => {
+async function getVehicles(req, res, next) {
   try {
     const vehicles = await Vehicle.findAll({
       where: { driver_id: req.user.id }
@@ -91,10 +91,10 @@ exports.getVehicles = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 // Get user's rides
-exports.getRides = async (req, res, next) => {
+async function getRides(req, res, next) {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -134,7 +134,7 @@ exports.getRides = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+}
 
 /**
  * Update user's device token for push notifications
@@ -142,7 +142,7 @@ exports.getRides = async (req, res, next) => {
  * @param {Object} res - Express response object
  * @returns {Promise<void>}
  */
-const updateDeviceToken = async (req, res) => {
+async function updateDeviceToken(req, res) {
   try {
     const { deviceToken } = req.body;
     const userId = req.user.id;
@@ -164,7 +164,7 @@ const updateDeviceToken = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 module.exports = {
   getProfile,

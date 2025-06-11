@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { Ride, User, Driver, Notification, UserPreference } = require('../models');
+const { Ride, User, Driver, Notification, UserPreference, Payment } = require('../models');
 const logger = require('../config/logger');
 const { sendEmail } = require('../utils/emailUtils');
 const { sendPushNotification, sendMulticastPushNotification } = require('../config/firebase');

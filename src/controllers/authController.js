@@ -5,6 +5,7 @@ const { ValidationError, AuthenticationError } = require('../middleware/errorHan
 const { logger } = require('../config/logger');
 const { sendEmail } = require('../utils/emailUtils');
 const { generateAccessToken, generateRefreshToken } = require('../utils/tokenUtils');
+const { NotFoundError } = require('../utils/errors');
 
 // Register new user
 exports.register = async (req, res, next) => {

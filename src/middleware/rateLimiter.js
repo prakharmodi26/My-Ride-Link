@@ -1,26 +1,45 @@
 const rateLimit = require('express-rate-limit');
-const { RedisStore } = require('rate-limit-redis');
-const Redis = require('ioredis');
-const winston = require('winston');
+const { logger } = require('../config/logger');
 
-// Initialize Redis client
-const redis = new Redis(process.env.REDIS_URL, {
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
+// Check if Redis is available
+let redis = null;
+let RedisStore = null;
+
+try {
+  const { RedisStore: Store } = require('rate-limit-redis');
+  const Redis = require('ioredis');
+  
+  // Initialize Redis client
+  redis = new Redis(process.env.REDIS_URL, {
+    retryStrategy: (times) => {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    }
+  });
+
+  redis.on('error', (err) => {
+    logger.error('Redis error:', err);
+  });
+
+  RedisStore = Store;
+} catch (error) {
+  logger.warn('Redis not available, using memory store for rate limiting');
+}
+
+// Create store based on availability
+const createStore = () => {
+  if (RedisStore && redis) {
+    return new RedisStore({
+      client: redis,
+      prefix: 'rl:api:'
+    });
   }
-});
-
-redis.on('error', (err) => {
-  winston.error('Redis error:', err);
-});
+  return undefined; // Use default memory store
+};
 
 // General API rate limiter
 const apiLimiter = rateLimit({
-  store: new RedisStore({
-    client: redis,
-    prefix: 'rl:api:'
-  }),
+  store: createStore(),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: {
@@ -33,10 +52,7 @@ const apiLimiter = rateLimit({
 
 // Auth endpoints rate limiter
 const authLimiter = rateLimit({
-  store: new RedisStore({
-    client: redis,
-    prefix: 'rl:auth:'
-  }),
+  store: createStore(),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // Limit each IP to 5 requests per windowMs
   message: {
@@ -49,10 +65,7 @@ const authLimiter = rateLimit({
 
 // Payment endpoints rate limiter
 const paymentLimiter = rateLimit({
-  store: new RedisStore({
-    client: redis,
-    prefix: 'rl:payment:'
-  }),
+  store: createStore(),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit each IP to 10 requests per windowMs
   message: {
@@ -65,10 +78,7 @@ const paymentLimiter = rateLimit({
 
 // WebSocket connection rate limiter
 const wsLimiter = rateLimit({
-  store: new RedisStore({
-    client: redis,
-    prefix: 'rl:ws:'
-  }),
+  store: createStore(),
   windowMs: 60 * 1000, // 1 minute
   max: 30, // Limit each IP to 30 connections per windowMs
   message: {

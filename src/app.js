@@ -3,7 +3,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const { logger } = require('./config/logger');
 const validateEnv = require('./config/validateEnv');
-const { testConnection, syncModels } = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
 const corsMiddleware = require('./middleware/cors');
 const securityMiddleware = require('./middleware/security');
@@ -15,6 +14,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const { healthCheck, detailedHealthCheck } = require('./controllers/healthController');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -64,14 +64,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Server is healthy',
-    timestamp: new Date().toISOString()
-  });
-});
+// Health check endpoints
+app.get('/health', healthCheck);
+app.get('/health/detailed', detailedHealthCheck);
 
 // API Documentation
 app.use('/api-docs', swagger.serve, swagger.setup);
@@ -97,56 +92,39 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-
-async function startServer() {
+// Database initialization function
+async function initializeDatabase() {
   try {
     const skipDbInit = process.env.DB_TEST_MODE === 'false';
     if (!skipDbInit) {
-      // require and initialize DB
-      const { sequelize, testConnection, syncModels } = require('./config/database');
-    // Test database connection
-    await testConnection();
-    
-    // Sync database models
-    await syncModels(process.env.NODE_ENV === 'development');
+      const { testConnection, syncModels } = require('./config/database');
+      
+      // Test database connection
+      logger.info('Testing database connection...');
+      const isConnected = await testConnection();
+      if (!isConnected) {
+        throw new Error('Database connection failed');
+      }
+      
+      // Sync database models
+      logger.info('Synchronizing database models...');
+      const isSynced = await syncModels(process.env.NODE_ENV === 'development');
+      if (!isSynced) {
+        throw new Error('Database model synchronization failed');
+      }
+      
+      logger.info('Database initialized successfully');
     }
-    
-    // Start server
-    server.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-    });
   } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+    logger.error('Database initialization failed:', error);
+    throw error;
   }
 }
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.error('UNHANDLED REJECTION! 💥 Shutting down...');
-  logger.error(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  logger.error(err.name, err.message);
+// Initialize database before exporting
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
   process.exit(1);
 });
-
-// Handle SIGTERM
-process.on('SIGTERM', () => {
-  logger.info('👋 SIGTERM RECEIVED. Shutting down gracefully');
-  server.close(() => {
-    logger.info('💥 Process terminated!');
-  });
-});
-
-startServer();
 
 module.exports = { app, server, io }; 

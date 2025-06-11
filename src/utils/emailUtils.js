@@ -72,7 +72,7 @@ exports.sendRideConfirmationEmail = async (ride, user) => {
       <p>Thank you for using My Ride Link™!</p>
     `;
 
-    return await sendEmail({
+    return await exports.sendEmail({
       to: user.email,
       subject,
       text,
@@ -118,7 +118,7 @@ exports.sendRideStatusEmail = async (ride, user, status) => {
       <p>Thank you for using My Ride Link™!</p>
     `;
 
-    return await sendEmail({
+    return await exports.sendEmail({
       to: user.email,
       subject: message.subject,
       text: message.text,
@@ -160,7 +160,7 @@ exports.sendPaymentConfirmationEmail = async (payment, user) => {
       <p>Thank you for using My Ride Link™!</p>
     `;
 
-    return await sendEmail({
+    return await exports.sendEmail({
       to: user.email,
       subject,
       text,

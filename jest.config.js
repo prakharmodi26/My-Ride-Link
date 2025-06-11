@@ -1,19 +1,18 @@
 module.exports = {
   testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-  testMatch: ['**/tests/**/*.test.js'],
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/app.js',
-    '!src/config/**',
-    '!src/models/index.js'
-  ],
+  verbose: true,
+  collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
-  verbose: true,
-  forceExit: true,
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
-  testTimeout: 10000
+  testMatch: ['**/tests/**/*.test.js'],
+  setupFilesAfterEnv: ['./tests/setup.js'],
+  testTimeout: 10000,
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
 }; 

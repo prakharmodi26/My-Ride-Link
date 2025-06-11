@@ -1,148 +1,136 @@
+// This file defines what information we store about each ride in our ride-sharing app
+// A ride represents a journey from one place to another, with a rider and a driver
+
 'use strict';
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class Ride extends Model {
+    /**
+     * Define how this model connects to other models in our database
+     * This helps us easily get related information (like who was the rider and driver)
+     */
     static associate(models) {
-      // Define associations
-      Ride.belongsTo(models.User, {
-        foreignKey: 'rider_id',
-        as: 'rider'
+      // Each ride has one rider
+      Ride.belongsTo(models.User, { 
+        as: 'rider', 
+        foreignKey: 'riderId' 
       });
-      Ride.belongsTo(models.User, {
-        foreignKey: 'driver_id',
-        as: 'driver'
+
+      // Each ride has one driver
+      Ride.belongsTo(models.User, { 
+        as: 'driver', 
+        foreignKey: 'driverId' 
       });
-      Ride.belongsTo(models.Vehicle, {
-        foreignKey: 'vehicle_id',
-        as: 'vehicle'
+
+      // Each ride has one payment record
+      Ride.hasOne(models.Payment, { 
+        foreignKey: 'rideId' 
       });
-      Ride.hasOne(models.Payment, {
-        foreignKey: 'ride_id',
-        as: 'payment'
+
+      // Each ride can have many notifications
+      Ride.hasMany(models.Notification, { 
+        foreignKey: 'rideId' 
       });
     }
   }
 
+  // Define all the information we store about each ride
   Ride.init({
+    // A unique ID for each ride
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
+
+    // The ID of the person requesting the ride
     riderId: {
       type: DataTypes.UUID,
       allowNull: false,
-      field: 'rider_id',
       references: {
         model: 'Users',
         key: 'id'
       }
     },
+
+    // The ID of the person driving the ride
     driverId: {
       type: DataTypes.UUID,
-      allowNull: true,
-      field: 'driver_id',
+      allowNull: true, // Can be null when ride is first requested
       references: {
         model: 'Users',
         key: 'id'
       }
     },
-    vehicleId: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      field: 'vehicle_id',
-      references: {
-        model: 'Vehicles',
-        key: 'id'
-      }
-    },
-    pickupLocation: {
+
+    // Where the ride starts (latitude and longitude)
+    origin: {
       type: DataTypes.GEOMETRY('POINT'),
-      allowNull: false,
-      field: 'pickup_location'
+      allowNull: false
     },
-    dropoffLocation: {
+
+    // Where the ride ends (latitude and longitude)
+    destination: {
       type: DataTypes.GEOMETRY('POINT'),
-      allowNull: false,
-      field: 'dropoff_location'
+      allowNull: false
     },
-    pickupAddress: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      field: 'pickup_address'
-    },
-    dropoffAddress: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      field: 'dropoff_address'
-    },
+
+    // Current status of the ride
     status: {
-      type: DataTypes.ENUM('requested', 'accepted', 'in_progress', 'completed', 'cancelled'),
-      defaultValue: 'requested'
+      type: DataTypes.ENUM('PENDING', 'ACCEPTED', 'STARTED', 'COMPLETED', 'CANCELLED'),
+      defaultValue: 'PENDING'
     },
+
+    // How much the ride costs
     fare: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true
+      allowNull: false
     },
+
+    // How far the ride is in kilometers
     distance: {
       type: DataTypes.FLOAT,
-      allowNull: true
+      allowNull: false
     },
-    duration: {
+
+    // How long the ride is expected to take in minutes
+    estimatedDuration: {
       type: DataTypes.INTEGER,
+      allowNull: false
+    },
+
+    // When the ride actually started
+    startTime: {
+      type: DataTypes.DATE,
       allowNull: true
     },
+
+    // When the ride actually ended
+    endTime: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+
+    // Whether the payment for the ride has been completed
     paymentStatus: {
-      type: DataTypes.ENUM('pending', 'completed', 'failed'),
-      defaultValue: 'pending',
-      field: 'payment_status'
-    },
-    paymentMethod: {
-      type: DataTypes.ENUM('card', 'cash', 'wallet'),
-      allowNull: false,
-      field: 'payment_method'
-    },
-    notes: {
-      type: DataTypes.TEXT
-    },
-    cancellationReason: {
-      type: DataTypes.STRING,
-      field: 'cancellation_reason'
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'created_at'
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'updated_at'
-    },
-    deletedAt: {
-      type: DataTypes.DATE,
-      field: 'deleted_at'
+      type: DataTypes.ENUM('PENDING', 'COMPLETED', 'FAILED'),
+      defaultValue: 'PENDING'
     }
   }, {
     sequelize,
     modelName: 'Ride',
     tableName: 'rides',
-    paranoid: true,
-    underscored: true,
+    timestamps: true, // Automatically add createdAt and updatedAt
     indexes: [
-      {
-        fields: ['rider_id']
-      },
-      {
-        fields: ['driver_id']
-      },
-      {
-        fields: ['vehicle_id']
-      },
-      {
-        fields: ['status']
-      }
+      // Index for quickly finding rides by rider
+      { fields: ['riderId'] },
+      // Index for quickly finding rides by driver
+      { fields: ['driverId'] },
+      // Index for quickly finding rides by status
+      { fields: ['status'] },
+      // Index for quickly finding rides by payment status
+      { fields: ['paymentStatus'] }
     ]
   });
 
